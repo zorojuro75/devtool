@@ -1,0 +1,11 @@
+# myapi
+
+A Go project scaffolded with devtool.
+
+## Getting Started
+
+\`\`\`bash
+go run main.go
+\`\`\`
+
+Built in 2026.
