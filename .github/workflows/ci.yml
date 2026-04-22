@@ -3,10 +3,10 @@ name: CI
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ main ]
-  release:
-    types: [ created ]
 
 jobs:
   test:
@@ -29,8 +29,10 @@ jobs:
   release:
     name: Release binaries
     needs: test
-    if: github.event_name == 'release'
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     strategy:
       matrix:
         include:
@@ -70,3 +72,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.name }}
+          generate_release_notes: true
