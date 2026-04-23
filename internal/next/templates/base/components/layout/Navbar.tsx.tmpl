@@ -1,0 +1,19 @@
+import Link from "next/link";
+
+export function Navbar() {
+  return (
+    <nav className="border-b bg-background">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <Link href="/" className="font-bold">
+          {{.ProjectName}}
+        </Link>
+        <div className="flex items-center gap-4 text-sm">
+          <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition">
+            Dashboard
+          </Link>
+          {/* Add user menu here with shadcn DropdownMenu */}
+        </div>
+      </div>
+    </nav>
+  );
+}

@@ -1,0 +1,5 @@
+// This file is overridden by the auth template if auth is selected.
+// If you see this file, no auth was configured.
+export async function GET() {
+  return new Response("Auth not configured", { status: 404 });
+}

@@ -1,0 +1,56 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    {{- if .IsPostgres}}
+    depends_on:
+      db:
+        condition: service_healthy
+    {{- end}}
+
+  {{- if .IsPostgres}}
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: {{.ProjectName}}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  {{- end}}
+
+  {{- if .IsMySQL}}
+  db:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: {{.ProjectName}}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  {{- end}}
+
+{{- if .IsPostgres}}
+volumes:
+  pgdata:
+{{- end}}
+{{- if .IsMySQL}}
+volumes:
+  mysqldata:
+{{- end}}

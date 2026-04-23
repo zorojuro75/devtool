@@ -26,6 +26,7 @@ func Execute(ver, date, sha string) {
 		newExplainCmd(),
 		newGitlogCmd(),
 		newVersionCmd(ver, date, sha),
+		newNextCmd(),
 	)
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

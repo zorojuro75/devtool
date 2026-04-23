@@ -1,0 +1,18 @@
+{{- if .HasAuth}}
+"use client";
+import { useSession } from "@/lib/auth-client";
+
+export function useAuth() {
+  const { data: session, isPending } = useSession();
+  return {
+    user: session?.user ?? null,
+    isLoading: isPending,
+    isAuthenticated: !!session?.user,
+  };
+}
+{{- else}}
+// No auth configured. Add Better Auth to use this hook.
+export function useAuth() {
+  return { user: null, isLoading: false, isAuthenticated: false };
+}
+{{- end}}

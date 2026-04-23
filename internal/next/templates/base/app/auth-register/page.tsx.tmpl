@@ -1,0 +1,24 @@
+import Link from "next/link";
+
+export default function LoginPage() {
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="w-full max-w-sm space-y-6 rounded-lg border p-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Sign in</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Welcome back to {{.ProjectName}}
+          </p>
+        </div>
+        {/* Add your login form here using shadcn/ui components */}
+        {/* npx shadcn@latest add button input label card */}
+        <p className="text-center text-sm text-muted-foreground">
+          No account?{" "}
+          <Link href="/register" className="underline hover:text-foreground">
+            Create one
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}
