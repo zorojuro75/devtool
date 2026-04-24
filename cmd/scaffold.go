@@ -15,8 +15,7 @@ func newScaffoldCmd() *cobra.Command {
 		Use:   "scaffold [framework] [project-name]",
 		Short: "Scaffold a new project from a template",
 		Example: `  devtool scaffold go myapi
-  devtool scaffold laravel blog
-  devtool scaffold next my-app`,
+		devtool scaffold laravel blog`,
 		Args: cobra.RangeArgs(1, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			framework := args[0]
