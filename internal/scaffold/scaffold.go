@@ -36,7 +36,6 @@ type templateVars struct {
 var frameworks = map[string]func(string) []templateFile{
 	"go":      goTemplates,
 	"laravel": laravelTemplates,
-	"next":    nextTemplates,
 }
 
 func Generate(framework, name string, force bool) ([]string, error) {
