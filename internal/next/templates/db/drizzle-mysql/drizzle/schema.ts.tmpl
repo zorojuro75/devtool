@@ -1,42 +1,44 @@
 import { mysqlTable, varchar, text, timestamp, datetime } from "drizzle-orm/mysql-core";
 
-export const users = mysqlTable("users", {
+export const users = mysqlTable("user", {
   id: varchar("id", { length: 128 }).primaryKey(),
   name: text("name"),
   email: varchar("email", { length: 255 }).notNull().unique(),
+  emailVerified: timestamp("email_verified"),
   password: text("password"),
   image: text("image"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const sessions = mysqlTable("sessions", {
+export const sessions = mysqlTable("session", {
   id: varchar("id", { length: 128 }).primaryKey(),
   userId: varchar("user_id", { length: 128 }).notNull().references(() => users.id, { onDelete: "cascade" }),
   token: varchar("token", { length: 512 }).notNull().unique(),
   expiresAt: datetime("expires_at").notNull(),
-  ipAddress: text("ip_address"),
+  ipAddress: varchar("ip_address", { length: 255 }),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
-export const accounts = mysqlTable("accounts", {
-  id: text("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  accountId: text("account_id").notNull(),
-  providerId: text("provider_id").notNull(),
+
+export const accounts = mysqlTable("account", {
+  id: varchar("id", { length: 128 }).primaryKey(),
+  userId: varchar("user_id", { length: 128 }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  accountId: varchar("account_id", { length: 255 }).notNull(),
+  providerId: varchar("provider_id", { length: 255 }).notNull(),
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
-  expiresAt: timestamp("expires_at"),
+  expiresAt: datetime("expires_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const verifications = mysqlTable("verifications", {
-  id: text("id").primaryKey(),
-  identifier: text("identifier").notNull(),
+export const verifications = mysqlTable("verification", {
+  id: varchar("id", { length: 128 }).primaryKey(),
+  identifier: varchar("identifier", { length: 255 }).notNull(),
   value: text("value").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
+  expiresAt: datetime("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

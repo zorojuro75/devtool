@@ -1,6 +1,6 @@
 # devtool
 
-A developer CLI with AI assistance — scaffold projects, explain errors, and summarise git history, all from your terminal.
+A developer CLI with AI assistance — scaffold projects, explain errors, summarise git history, and generate production-ready Next.js fullstack projects, all from your terminal.
 
 Built in Go as a portfolio project demonstrating goroutines, streaming HTTP, interfaces, embed.FS, and cross-compilation.
 
@@ -29,15 +29,51 @@ that will never be satisfied because no goroutine is left to unblock them.
 ```
 
 ```
+$ devtool next myapp
+
+Configuring myapp
+────────────────────────────────────────
+? Database:
+  1) Prisma + SQLite  (local, zero config)
+  2) Prisma + PostgreSQL
+  3) Drizzle + PostgreSQL
+  4) Drizzle + MySQL
+  5) None
+
+? Authentication:
+  1) Better Auth — email + password
+  2) Better Auth — email + password + GitHub OAuth
+  3) None
+
+? Include Zustand? [y/N]: y
+? Include Docker? [y/N]: y
+
+✓ Created myapp
+  28 files generated
+
+──────────────────────────────────────────────────
+  Stack
+──────────────────────────────────────────────────
+  Framework    Next.js 16.2.4 (App Router)
+  Language     TypeScript
+  Styling      Tailwind CSS + shadcn/ui
+  Auth         Better Auth (email + password)
+  Database     Prisma 7 + SQLite
+  State        Zustand
+  Docker       Dockerfile + docker-compose.yml
+──────────────────────────────────────────────────
+
+  cd myapp
+  Open SETUP.md for the complete setup guide.
+```
+
+```
 $ devtool gitlog --since 7d --format changelog
 
 Git summary (changelog):
 **Added**
+- feat: add devtool next command
 - feat: add streaming explain command
-- feat: add scaffold templates for go, laravel, next
-
-**Changed**
-- refactor: move AI client behind Completer interface
 
 **Fixed**
 - fix: context cancellation on Ctrl+C now exits cleanly
@@ -84,7 +120,7 @@ Open it and add your API key:
 provider: openrouter
 api_key: sk-or-v1-xxxxxxxxxxxxxxxx
 timeout: 30
-model: "nvidia/nemotron-3-super-120b-a12b:free"
+model: "mistralai/mistral-7b-instruct:free"
 ```
 
 Get a **free** API key at [openrouter.ai](https://openrouter.ai) — no credit card required.
@@ -99,15 +135,58 @@ export DEVTOOL_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxx
 
 | Model | Speed | Quality |
 |-------|-------|---------|
-| `nvidia/nemotron-3-super-120b-a12b:free` | Fast | Good |
-| `z-ai/glm-4.5-air:free` | Fast | Good |
+| `mistralai/mistral-7b-instruct:free` | Fast | Good |
+| `meta-llama/llama-3-8b-instruct:free` | Fast | Good |
 | `google/gemma-7b-it:free` | Medium | Good |
 
 ---
 
 ## Commands
 
-### `scaffold` — Generate a project skeleton
+### `next` — Scaffold a Next.js 16 fullstack project
+
+```bash
+devtool next [project-name]
+```
+
+Interactive prompts configure your entire stack. The generated project is ready to run after `npm install` and filling in `.env.local`.
+
+**What gets generated:**
+
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js 16.2.4 (App Router + TypeScript) |
+| Styling | Tailwind CSS + shadcn/ui |
+| Auth | Better Auth v1.6.7 |
+| Database | Prisma 7 or Drizzle ORM |
+| State | Zustand (optional) |
+| Docker | Dockerfile + docker-compose (optional) |
+
+**Examples:**
+
+```bash
+# Interactive — answers prompts for DB, auth, state, docker
+devtool next myapp
+
+# Non-interactive — skip prompts using flags
+devtool next myapp --db prisma-sqlite --auth better-auth-email --state --docker --no-prompt
+```
+
+**Flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--db string` | `prisma-sqlite` \| `prisma-pg` \| `drizzle-pg` \| `drizzle-mysql` \| `none` |
+| `--auth string` | `better-auth-email` \| `better-auth-github` \| `none` |
+| `--state` | Include Zustand state management |
+| `--docker` | Include Dockerfile + docker-compose |
+| `--no-prompt` | Skip interactive prompts, use flags only |
+
+**After generation, follow `SETUP.md` inside the project folder.** It contains every command needed for your exact stack — DB migration, shadcn setup, and dev server start.
+
+---
+
+### `scaffold` — Generate a simple project skeleton
 
 ```bash
 devtool scaffold [framework] [project-name]
@@ -116,9 +195,8 @@ devtool scaffold [framework] [project-name]
 **Supported frameworks:**
 
 ```bash
-devtool scaffold go myapi          # Go module with cmd/, internal/, Makefile
-devtool scaffold laravel blog      # Laravel skeleton with .env.example
-devtool scaffold next my-app       # Next.js 14 App Router with TypeScript
+devtool scaffold go myapi        # Go module with cmd/, internal/, Makefile
+devtool scaffold laravel blog    # Laravel skeleton with .env.example
 ```
 
 **Flags:**
@@ -197,8 +275,8 @@ devtool version --json
 
 Output:
 ```
-version:    v1.0.0
-build date: 2026-04-22T10:30:00Z
+version:    v1.1.0
+build date: 2026-04-25T10:30:00Z
 commit:     a1b2c3d
 ```
 
@@ -220,12 +298,13 @@ These flags work with every command:
 
 ```
 devtool/
-├── cmd/                        # Cobra command definitions (one file per command)
+├── cmd/
 │   ├── root.go                 # Root command, global flags, Execute()
-│   ├── scaffold.go
-│   ├── explain.go
-│   ├── gitlog.go
-│   └── version.go
+│   ├── next.go                 # Next.js fullstack scaffold command
+│   ├── scaffold.go             # Simple project skeleton command
+│   ├── explain.go              # AI error explainer
+│   ├── gitlog.go               # AI git summariser
+│   └── version.go              # Build metadata
 ├── internal/
 │   ├── ai/
 │   │   ├── client.go           # Completer interface + OpenRouter implementation
@@ -234,13 +313,22 @@ devtool/
 │   │   └── config.go           # YAML loader, env var override, default file creation
 │   ├── git/
 │   │   └── log.go              # os/exec wrapper for git log with context timeout
+│   ├── next/
+│   │   ├── next.go             # Orchestrator — generates all project files
+│   │   ├── options.go          # NextOptions struct with helper methods
+│   │   ├── prompt.go           # Interactive CLI prompts
+│   │   ├── package.go          # Programmatic package.json builder
+│   │   ├── writer.go           # embed.FS template renderer
+│   │   └── templates/          # Embedded Next.js project templates
+│   │       ├── base/           # Always generated (layout, pages, config)
+│   │       ├── db/             # prisma-sqlite, prisma-pg, drizzle-pg, drizzle-mysql
+│   │       ├── auth/           # better-auth-email, better-auth-github
+│   │       ├── state/          # Zustand stores
+│   │       └── docker/         # Dockerfile + docker-compose
 │   └── scaffold/
 │       ├── scaffold.go         # Template engine using embed.FS + text/template
-│       └── templates/          # Embedded project templates
-│           ├── go/
-│           ├── laravel/
-│           └── next/
-├── main.go                     # Entry point — calls cmd.Execute() only
+│       └── templates/          # Go and Laravel skeleton templates
+├── main.go
 ├── Makefile
 └── go.mod
 ```
@@ -258,7 +346,6 @@ Tests inject a mock that returns a `strings.NewReader` — no real HTTP calls ne
 
 **Streaming HTTP with SSE parsing**
 ```go
-// Each token printed as received, not buffered
 scanner := bufio.NewScanner(resp.Body)
 for scanner.Scan() {
     line := scanner.Text()
@@ -269,23 +356,28 @@ for scanner.Scan() {
 ```
 
 **Context & cancellation**
-Every blocking operation — HTTP requests, `os/exec` calls — uses `context.WithTimeout`. Ctrl+C cancels the entire call chain cleanly via `context.WithCancel`.
+Every blocking operation uses `context.WithTimeout`. Ctrl+C cancels the entire call chain cleanly.
 
 **embed.FS**
-Template files are compiled directly into the binary:
+All template files are compiled directly into the binary — zero runtime file dependencies:
 ```go
-//go:embed templates/go/main.go.tmpl
-var goMainTmpl string
+//go:embed templates
+var templateFS embed.FS
 ```
-Zero runtime file dependencies — the binary is fully self-contained.
+
+**Programmatic file generation**
+`package.json` is built in Go based on selected options — no messy template conditionals:
+```go
+func buildPackageJSON(opts *NextOptions) packageJSON {
+    deps := map[string]string{ "next": "16.2.4", ... }
+    if opts.IsDrizzle() { deps["drizzle-orm"] = "^0.45.2" }
+    // ...
+}
+```
 
 **Table-driven tests**
 ```go
-tests := []struct {
-    name    string
-    input   string
-    want    string
-}{
+tests := []struct{ name, input, want string }{
     {"single token", `data: {"choices":[...]}`, "Hello\n"},
     {"handles [DONE]", "data: [DONE]\n", "\n"},
 }
@@ -340,10 +432,11 @@ ok   github.com/zorojuro75/devtool/internal/git       5.18s
 ## Roadmap
 
 - [ ] `review` command — AI code review of a git diff
-- [ ] Conversation history — persistent multi-turn context per project
+- [ ] `devtool next` — more framework options (SvelteKit, Nuxt)
+- [ ] `config set/show` — manage config without editing YAML manually
+- [ ] `gitlog --save` — export AI summary directly to a file
 - [ ] Local LLM support via Ollama (offline, no API key needed)
 - [ ] Homebrew tap for `brew install devtool`
-- [ ] Plugin system — user-defined sub-commands
 
 ---
 
