@@ -25,6 +25,7 @@ func buildPackageJSON(opts *NextOptions) packageJSON {
 		"tailwind-merge":           "^2",
 		"class-variance-authority": "^0.7",
 		"lucide-react":             "^1.8.0",
+		"zod":                      "^3",
 	}
 
 	devDeps := map[string]string{

@@ -6,27 +6,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	cfgFile  string
-	noColor  bool
-	verbose  bool
-	provider string
-)
-
 var rootCmd = &cobra.Command{
 	Use:   "devtool",
-	Short: "A developer CLI with AI assistance",
-	Long: `devtool helps you scaffold projects, explain errors, and summarise
-git history — all with AI assistance powered by OpenRouter.`,
+	Short: "A developer CLI for scaffolding Next.js fullstack projects",
+	Long:  `devtool scaffolds production-ready Next.js 16 fullstack projects with Better Auth, Prisma or Drizzle, Tailwind CSS, and shadcn/ui.`,
 }
 
 func Execute(ver, date, sha string) {
 	rootCmd.AddCommand(
-		newScaffoldCmd(),
-		newExplainCmd(),
-		newGitlogCmd(),
-		newVersionCmd(ver, date, sha),
 		newNextCmd(),
+		newVersionCmd(ver, date, sha),
 	)
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -34,7 +23,11 @@ func Execute(ver, date, sha string) {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default: ~/.devtool.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable colour output")
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "verbose logging")
 }
+
+var (
+	noColor bool
+	verbose bool
+)

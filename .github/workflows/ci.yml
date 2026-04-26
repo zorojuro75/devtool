@@ -9,8 +9,8 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
-    name: Test
+  build-and-test:
+    name: Build & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,17 +18,27 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.22'
+          cache: true
 
-      - name: Run tests
-        run: go test -v -count=1 ./...
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
 
       - name: Run vet
         run: go vet ./...
 
+      - name: Run tests
+        run: go test -v -count=1 ./...
+
+      - name: Build
+        run: go build -o /dev/null .
+
   release:
-    name: Release binaries
-    needs: test
+    name: Release
+    needs: build-and-test
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -57,15 +67,19 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          go-version: '1.22'
+          cache: true
 
-      - name: Build
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build ${{ matrix.name }}
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: |
           go build \
-            -ldflags "-X main.version=${{ github.ref_name }} -X main.buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X main.commit=${{ github.sha }}" \
+            -ldflags "-s -w -X main.version=${{ github.ref_name }} -X main.buildDate=$(date -u +%Y-%m-%dT%H:%M:%SZ) -X main.commit=${{ github.sha }}" \
             -o ${{ matrix.name }} .
 
       - name: Upload to release
@@ -73,3 +87,4 @@ jobs:
         with:
           files: ${{ matrix.name }}
           generate_release_notes: true
+          fail_on_unmatched_files: true

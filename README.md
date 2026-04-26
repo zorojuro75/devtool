@@ -1,32 +1,16 @@
 # devtool
 
-A developer CLI with AI assistance — scaffold projects, explain errors, summarise git history, and generate production-ready Next.js fullstack projects, all from your terminal.
+A CLI tool for scaffolding production-ready Next.js 16 fullstack projects — with Better Auth, Prisma or Drizzle ORM, Tailwind CSS, shadcn/ui, and optional Zustand and Docker — all configured and wired together in under a minute.
 
-Built in Go as a portfolio project demonstrating goroutines, streaming HTTP, interfaces, embed.FS, and cross-compilation.
+Built in Go as a portfolio project demonstrating embed.FS, text/template, interactive CLI prompts, programmatic JSON generation, and cross-compilation.
 
 ![CI](https://github.com/zorojuro75/devtool/actions/workflows/ci.yml/badge.svg)
-![Go Version](https://img.shields.io/badge/go-1.21+-00ADD8?logo=go)
+![Go Version](https://img.shields.io/badge/go-1.22+-00ADD8?logo=go)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
 ## Demo
-
-```
-$ devtool explain "fatal error: all goroutines are asleep - deadlock!"
-
-Explanation:
-**Error type & language**: Go runtime panic
-
-**Root cause**
-Your program created goroutines that are all waiting on channel operations
-that will never be satisfied because no goroutine is left to unblock them.
-
-**Fixes**
-1. Close or drain channels after all sends are complete
-2. Ensure WaitGroup.Done() is called for every Add()
-3. Add a timeout case to blocking select statements
-```
 
 ```
 $ devtool next myapp
@@ -40,16 +24,25 @@ Configuring myapp
   4) Drizzle + MySQL
   5) None
 
+Enter choice [1-5]: 1
+  ✓ Prisma + SQLite  (local, zero config)
+
 ? Authentication:
   1) Better Auth — email + password
   2) Better Auth — email + password + GitHub OAuth
   3) None
 
-? Include Zustand? [y/N]: y
-? Include Docker? [y/N]: y
+Enter choice [1-3]: 1
+  ✓ Better Auth — email + password
+
+? Include Zustand (state management)? [y/N]: y
+  ✓ Yes
+
+? Include Docker + docker-compose? [y/N]: n
+  ✗ No
 
 ✓ Created myapp
-  28 files generated
+  26 files generated
 
 ──────────────────────────────────────────────────
   Stack
@@ -60,23 +53,62 @@ Configuring myapp
   Auth         Better Auth (email + password)
   Database     Prisma 7 + SQLite
   State        Zustand
-  Docker       Dockerfile + docker-compose.yml
 ──────────────────────────────────────────────────
 
+  Next steps
+
   cd myapp
+
   Open SETUP.md for the complete setup guide.
 ```
 
+---
+
+## What gets generated
+
+Running `devtool next myapp` produces a fully wired project:
+
 ```
-$ devtool gitlog --since 7d --format changelog
-
-Git summary (changelog):
-**Added**
-- feat: add devtool next command
-- feat: add streaming explain command
-
-**Fixed**
-- fix: context cancellation on Ctrl+C now exits cleanly
+myapp/
+├── app/
+│   ├── (auth)/
+│   │   ├── login/page.tsx
+│   │   └── register/page.tsx
+│   ├── (dashboard)/
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── api/auth/[...all]/route.ts
+│   ├── globals.css
+│   └── layout.tsx
+├── components/
+│   ├── ui/                     shadcn/ui components go here
+│   ├── layout/Navbar.tsx
+│   └── shared/LoadingSpinner.tsx
+├── lib/
+│   ├── auth.ts                 Better Auth server config
+│   ├── auth-client.ts          Better Auth React hooks
+│   ├── db.ts                   Database client singleton
+│   ├── env.ts                  Zod environment validation
+│   └── utils.ts                cn() Tailwind helper
+├── store/                      Zustand stores (if selected)
+│   ├── index.ts
+│   └── useUserStore.ts
+├── hooks/useAuth.ts
+├── types/index.ts
+├── prisma/schema.prisma        (if Prisma selected)
+├── drizzle/                    (if Drizzle selected)
+│   ├── schema.ts
+│   ├── migrate.ts
+│   └── migrations/
+├── Dockerfile                  (if Docker selected)
+├── docker-compose.yml          (if Docker selected)
+├── proxy.ts                    Route protection (Next.js 16)
+├── .env.example
+├── package.json                Built programmatically for your stack
+├── tsconfig.json
+├── tailwind.config.ts
+├── components.json
+└── SETUP.md                    Step-by-step setup guide for your stack
 ```
 
 ---
@@ -101,7 +133,7 @@ chmod +x devtool-linux-amd64
 sudo mv devtool-linux-amd64 /usr/local/bin/devtool
 ```
 
-**Windows:** Rename to `devtool.exe` and move to a folder on your PATH.
+**Windows:** Rename to `devtool.exe` and add it to a folder on your PATH.
 
 ### Option 2 — Install with Go
 
@@ -111,169 +143,114 @@ go install github.com/zorojuro75/devtool@latest
 
 ---
 
-## Setup
+## Usage
 
-On first run, devtool creates a config file at `~/.devtool.yaml` automatically.
-Open it and add your API key:
+### Interactive mode
 
-```yaml
-provider: openrouter
-api_key: sk-or-v1-xxxxxxxxxxxxxxxx
-timeout: 30
-model: "mistralai/mistral-7b-instruct:free"
-```
-
-Get a **free** API key at [openrouter.ai](https://openrouter.ai) — no credit card required.
-
-You can also set the API key via environment variable:
+Answer prompts to configure your stack:
 
 ```bash
-export DEVTOOL_API_KEY=sk-or-v1-xxxxxxxxxxxxxxxx
-```
-
-### Recommended free models on OpenRouter
-
-| Model | Speed | Quality |
-|-------|-------|---------|
-| `mistralai/mistral-7b-instruct:free` | Fast | Good |
-| `meta-llama/llama-3-8b-instruct:free` | Fast | Good |
-| `google/gemma-7b-it:free` | Medium | Good |
-
----
-
-## Commands
-
-### `next` — Scaffold a Next.js 16 fullstack project
-
-```bash
-devtool next [project-name]
-```
-
-Interactive prompts configure your entire stack. The generated project is ready to run after `npm install` and filling in `.env.local`.
-
-**What gets generated:**
-
-| Layer | Choice |
-|-------|--------|
-| Framework | Next.js 16.2.4 (App Router + TypeScript) |
-| Styling | Tailwind CSS + shadcn/ui |
-| Auth | Better Auth v1.6.7 |
-| Database | Prisma 7 or Drizzle ORM |
-| State | Zustand (optional) |
-| Docker | Dockerfile + docker-compose (optional) |
-
-**Examples:**
-
-```bash
-# Interactive — answers prompts for DB, auth, state, docker
 devtool next myapp
-
-# Non-interactive — skip prompts using flags
-devtool next myapp --db prisma-sqlite --auth better-auth-email --state --docker --no-prompt
 ```
 
-**Flags:**
+### Non-interactive mode
+
+Skip prompts using flags — useful for scripts and dotfiles:
+
+```bash
+devtool next myapp \
+  --db prisma-sqlite \
+  --auth better-auth-email \
+  --state \
+  --docker \
+  --no-prompt
+```
+
+### Flags
 
 | Flag | Description |
 |------|-------------|
-| `--db string` | `prisma-sqlite` \| `prisma-pg` \| `drizzle-pg` \| `drizzle-mysql` \| `none` |
-| `--auth string` | `better-auth-email` \| `better-auth-github` \| `none` |
+| `--db string` | Database: `prisma-sqlite` \| `prisma-pg` \| `drizzle-pg` \| `drizzle-mysql` \| `none` |
+| `--auth string` | Auth: `better-auth-email` \| `better-auth-github` \| `none` |
 | `--state` | Include Zustand state management |
 | `--docker` | Include Dockerfile + docker-compose |
-| `--no-prompt` | Skip interactive prompts, use flags only |
-
-**After generation, follow `SETUP.md` inside the project folder.** It contains every command needed for your exact stack — DB migration, shadcn setup, and dev server start.
+| `--no-prompt` | Skip interactive prompts, require all flags |
 
 ---
 
-### `scaffold` — Generate a simple project skeleton
+## After generation
 
-```bash
-devtool scaffold [framework] [project-name]
+Every generated project includes a `SETUP.md` tailored to your exact stack. It covers:
+
+- Installing dependencies
+- Setting up `.env.local` with all required variables
+- Generating and running database migrations
+- Installing shadcn/ui components
+- Starting the dev server
+- Using Better Auth in your components
+- Docker setup (if selected)
+
+### Environment validation
+
+`lib/env.ts` uses Zod to validate all required environment variables at startup. If anything is missing or invalid, you see a clear error immediately:
+
+```
+🚨 Invalid environment variables:
+
+  ✗ BETTER_AUTH_SECRET: must be at least 32 characters.
+    Generate one with: openssl rand -base64 32
+  ✗ DATABASE_URL: DATABASE_URL is required.
+    Example: file:./dev.db
+
+Fix the above errors in your .env.local file and restart the server.
 ```
 
-**Supported frameworks:**
-
-```bash
-devtool scaffold go myapi        # Go module with cmd/, internal/, Makefile
-devtool scaffold laravel blog    # Laravel skeleton with .env.example
-```
-
-**Flags:**
-
-| Flag | Description |
-|------|-------------|
-| `--force` | Overwrite existing directory without prompting |
+No more confusing runtime crashes from missing env vars.
 
 ---
 
-### `explain` — Explain any error message using AI
+## Stack details
 
-```bash
-devtool explain [error message] [flags]
-```
+### Framework
+- **Next.js 16.2.4** — App Router, TypeScript, Turbopack
 
-**Examples:**
+### Styling
+- **Tailwind CSS 3.4** with CSS variables for theming
+- **shadcn/ui** — component library (added via `npx shadcn@latest add`)
 
-```bash
-# Pass error as argument
-devtool explain "panic: runtime error: index out of range [0] with length 0"
+### Authentication
+- **Better Auth 1.6.7** — email/password and optional GitHub OAuth
+- Pre-wired API route at `app/api/auth/[...all]/route.ts`
+- Route protection via `proxy.ts` (Next.js 16 middleware replacement)
+- Ready-to-use hooks via `lib/auth-client.ts`
 
-# Pipe from a log file
-cat build.log | devtool explain
+### Database options
 
-# Hint the language for better context
-devtool explain "Undefined variable $name" --lang php
-```
+| Option | ORM | Driver |
+|--------|-----|--------|
+| `prisma-sqlite` | Prisma 7 | SQLite (local file, no server) |
+| `prisma-pg` | Prisma 7 | PostgreSQL |
+| `drizzle-pg` | Drizzle 0.45 | PostgreSQL |
+| `drizzle-mysql` | Drizzle 0.45 | MySQL |
 
-**Flags:**
+### State management
+- **Zustand 5** with `persist` middleware
+- Pre-configured `useUserStore` for auth state
 
-| Flag | Description |
-|------|-------------|
-| `--lang string` | Hint the programming language (e.g. go, php, typescript) |
-
-The response streams token-by-token — you see the explanation as it is generated, not all at once.
-
----
-
-### `gitlog` — Summarise recent git commits using AI
-
-```bash
-devtool gitlog [flags]
-```
-
-**Examples:**
-
-```bash
-# Daily standup notes
-devtool gitlog --since 1d --format standup
-
-# Weekly changelog
-devtool gitlog --since 7d --format changelog
-
-# General summary
-devtool gitlog --since 30d --format summary
-```
-
-**Flags:**
-
-| Flag | Default | Description |
-|------|---------|-------------|
-| `--since string` | `1d` | Time range: `1d`, `7d`, `30d`, or `YYYY-MM-DD` |
-| `--format string` | `summary` | Output style: `summary`, `changelog`, `standup` |
-| `--branch string` | current | Branch to summarise |
-| `--max-commits int` | `50` | Max commits to include in context |
+### Docker
+- Multi-stage Dockerfile (Node 20 Alpine)
+- `docker-compose.yml` with app + database services
+- Health checks on database before app starts
 
 ---
 
-### `version` — Print build metadata
+## Version
 
 ```bash
 devtool version
 devtool version --json
 ```
 
-Output:
 ```
 version:    v1.1.0
 build date: 2026-04-25T10:30:00Z
@@ -282,52 +259,27 @@ commit:     a1b2c3d
 
 ---
 
-## Global Flags
-
-These flags work with every command:
-
-| Flag | Description |
-|------|-------------|
-| `--config string` | Path to config file (default: `~/.devtool.yaml`) |
-| `--no-color` | Disable ANSI colour output |
-| `--verbose` | Enable verbose HTTP logging |
-
----
-
 ## Architecture
 
 ```
 devtool/
 ├── cmd/
-│   ├── root.go                 # Root command, global flags, Execute()
-│   ├── next.go                 # Next.js fullstack scaffold command
-│   ├── scaffold.go             # Simple project skeleton command
-│   ├── explain.go              # AI error explainer
-│   ├── gitlog.go               # AI git summariser
-│   └── version.go              # Build metadata
+│   ├── root.go         Root command
+│   ├── next.go         devtool next — fullstack scaffold command
+│   └── version.go      devtool version — build metadata
 ├── internal/
-│   ├── ai/
-│   │   ├── client.go           # Completer interface + OpenRouter implementation
-│   │   └── stream.go           # SSE stream parser (bufio.Scanner)
-│   ├── config/
-│   │   └── config.go           # YAML loader, env var override, default file creation
-│   ├── git/
-│   │   └── log.go              # os/exec wrapper for git log with context timeout
-│   ├── next/
-│   │   ├── next.go             # Orchestrator — generates all project files
-│   │   ├── options.go          # NextOptions struct with helper methods
-│   │   ├── prompt.go           # Interactive CLI prompts
-│   │   ├── package.go          # Programmatic package.json builder
-│   │   ├── writer.go           # embed.FS template renderer
-│   │   └── templates/          # Embedded Next.js project templates
-│   │       ├── base/           # Always generated (layout, pages, config)
-│   │       ├── db/             # prisma-sqlite, prisma-pg, drizzle-pg, drizzle-mysql
-│   │       ├── auth/           # better-auth-email, better-auth-github
-│   │       ├── state/          # Zustand stores
-│   │       └── docker/         # Dockerfile + docker-compose
-│   └── scaffold/
-│       ├── scaffold.go         # Template engine using embed.FS + text/template
-│       └── templates/          # Go and Laravel skeleton templates
+│   └── next/
+│       ├── next.go     Orchestrator — generates all files
+│       ├── options.go  NextOptions struct + helper methods
+│       ├── prompt.go   Interactive CLI prompts
+│       ├── package.go  Programmatic package.json builder
+│       ├── writer.go   embed.FS template renderer
+│       └── templates/
+│           ├── base/   Always generated
+│           ├── db/     prisma-sqlite, prisma-pg, drizzle-pg, drizzle-mysql
+│           ├── auth/   better-auth-email, better-auth-github
+│           ├── state/  Zustand stores
+│           └── docker/ Dockerfile + docker-compose
 ├── main.go
 ├── Makefile
 └── go.mod
@@ -335,55 +287,37 @@ devtool/
 
 ### Key Go concepts demonstrated
 
-**Interfaces for testability**
-The AI client is defined as a single-method interface:
-```go
-type Completer interface {
-    Stream(ctx context.Context, prompt, system string) (io.Reader, error)
-}
-```
-Tests inject a mock that returns a `strings.NewReader` — no real HTTP calls needed.
-
-**Streaming HTTP with SSE parsing**
-```go
-scanner := bufio.NewScanner(resp.Body)
-for scanner.Scan() {
-    line := scanner.Text()
-    if strings.HasPrefix(line, "data: ") {
-        // parse JSON delta, write to stdout immediately
-    }
-}
-```
-
-**Context & cancellation**
-Every blocking operation uses `context.WithTimeout`. Ctrl+C cancels the entire call chain cleanly.
-
-**embed.FS**
-All template files are compiled directly into the binary — zero runtime file dependencies:
+**embed.FS — zero runtime dependencies**
+All 30+ template files are compiled into the binary at build time:
 ```go
 //go:embed templates
 var templateFS embed.FS
 ```
 
-**Programmatic file generation**
-`package.json` is built in Go based on selected options — no messy template conditionals:
+**Programmatic package.json generation**
+Instead of fragile template conditionals, `package.json` is built as a Go struct and marshalled to JSON. Each stack option adds its own dependencies:
 ```go
 func buildPackageJSON(opts *NextOptions) packageJSON {
-    deps := map[string]string{ "next": "16.2.4", ... }
-    if opts.IsDrizzle() { deps["drizzle-orm"] = "^0.45.2" }
+    deps := map[string]string{"next": "16.2.4", ...}
+    if opts.IsDrizzle() {
+        deps["drizzle-orm"] = "^0.45.2"
+        deps["drizzle-kit"] = "^0.31.4"
+    }
     // ...
 }
 ```
 
-**Table-driven tests**
-```go
-tests := []struct{ name, input, want string }{
-    {"single token", `data: {"choices":[...]}`, "Hello\n"},
-    {"handles [DONE]", "data: [DONE]\n", "\n"},
-}
-for _, tt := range tests {
-    t.Run(tt.name, func(t *testing.T) { ... })
-}
+**Separate template files per adapter**
+Auth templates are split by DB adapter (`auth-prisma.ts.tmpl`, `auth-drizzle.ts.tmpl`) rather than using `{{if}}` chains inside one template. This makes each file clean and independently maintainable.
+
+**Cross-compilation**
+A single `make release` produces binaries for 5 platforms:
+```makefile
+release:
+    GOOS=linux   GOARCH=amd64 go build -o dist/devtool-linux-amd64 .
+    GOOS=darwin  GOARCH=arm64 go build -o dist/devtool-darwin-arm64 .
+    GOOS=windows GOARCH=amd64 go build -o dist/devtool-windows-amd64.exe .
+    # ...
 ```
 
 ---
@@ -392,51 +326,32 @@ for _, tt := range tests {
 
 ### Prerequisites
 
-- Go 1.21+
+- Go 1.22+
 - Git 2.0+
-- `make` (install via `choco install make` on Windows)
+- `make` (Windows: `choco install make`)
 
-### Build
-
-```bash
-make build       # build for current platform → bin/devtool
-make release     # cross-compile for all 5 platforms → dist/
-make test        # run all tests
-make lint        # go vet
-make install     # install to $GOPATH/bin
-make clean       # remove bin/ and dist/
-```
-
-### Running tests
+### Commands
 
 ```bash
-make test
+make build      # build for current platform → bin/devtool
+make install    # install to $GOPATH/bin with version info
+make release    # cross-compile for all 5 platforms → dist/
+make test       # run all tests
+make lint       # go vet
+make clean      # remove bin/ and dist/
 ```
-
-Expected output:
-```
-ok   github.com/zorojuro75/devtool/internal/ai        0.18s
-ok   github.com/zorojuro75/devtool/internal/config    0.24s
-ok   github.com/zorojuro75/devtool/internal/git       5.18s
-```
-
-### Adding a new command
-
-1. Create `cmd/yourcommand.go` with a `newYourCmd()` function
-2. Register it in `cmd/root.go` inside `Execute()`
-3. Add business logic under `internal/yourpackage/`
-4. Write table-driven tests in `internal/yourpackage/yourpackage_test.go`
 
 ---
 
 ## Roadmap
 
-- [ ] `review` command — AI code review of a git diff
-- [ ] `devtool next` — more framework options (SvelteKit, Nuxt)
-- [ ] `config set/show` — manage config without editing YAML manually
-- [ ] `gitlog --save` — export AI summary directly to a file
-- [ ] Local LLM support via Ollama (offline, no API key needed)
-- [ ] Homebrew tap for `brew install devtool`
+- [ ] `devtool next` — SvelteKit and Nuxt support
+- [ ] `devtool next` — tRPC option
+- [ ] `devtool next` — Resend email integration
+- [ ] `devtool next` — Stripe payments integration
+- [ ] `devtool config` — manage config without editing YAML
+- [ ] Homebrew tap — `brew install devtool`
+- [ ] Shell completion — `devtool completion zsh`
 
 ---
 

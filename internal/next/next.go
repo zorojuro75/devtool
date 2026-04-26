@@ -58,6 +58,7 @@ func Generate(opts *NextOptions) ([]string, error) {
 		{"templates/base/hooks/useAuth.ts.tmpl", "hooks/useAuth.ts"},
 		{"templates/base/types/index.ts.tmpl", "types/index.ts"},
 		{"templates/base/lib/utils.ts.tmpl", "lib/utils.ts"},
+		{"templates/base/lib/env.ts.tmpl", "lib/env.ts"},
 		{"templates/base/next.config.ts.tmpl", "next.config.ts"},
 		{"templates/base/tsconfig.json.tmpl", "tsconfig.json"},
 		{"templates/base/tailwind.config.ts.tmpl", "tailwind.config.ts"},
