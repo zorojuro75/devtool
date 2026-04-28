@@ -25,7 +25,8 @@ func buildPackageJSON(opts *NextOptions) packageJSON {
 		"tailwind-merge":           "^2",
 		"class-variance-authority": "^0.7",
 		"lucide-react":             "^1.8.0",
-		"zod":                      "^3",
+		"zod":                      "^4",
+		"dotenv":                   "^16",
 	}
 
 	devDeps := map[string]string{
@@ -49,7 +50,7 @@ func buildPackageJSON(opts *NextOptions) packageJSON {
 	}
 
 	if opts.HasAuth() {
-		deps["better-auth"] = "^1.6.7"
+		deps["better-auth"] = "^1.6.9"
 	}
 
 	if opts.State {
@@ -84,9 +85,9 @@ func buildPackageJSON(opts *NextOptions) packageJSON {
 
 	if opts.HasAuth() && opts.HasDB() {
 		if opts.IsPrisma() {
-			deps["@better-auth/prisma-adapter"] = "^1.6.7"
+			deps["@better-auth/prisma-adapter"] = "^1.6.9"
 		} else if opts.IsDrizzle() {
-			deps["@better-auth/drizzle-adapter"] = "^1.6.7"
+			deps["@better-auth/drizzle-adapter"] = "^1.6.9"
 		}
 	}
 
