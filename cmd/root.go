@@ -16,6 +16,7 @@ func Execute(ver, date, sha string) {
 	rootCmd.AddCommand(
 		newNextCmd(),
 		newVersionCmd(ver, date, sha),
+		newDockerCmd(),
 	)
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
