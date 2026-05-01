@@ -67,7 +67,8 @@ func PrintConnectionStrings(entries []EnvEntry) {
 		return
 	}
 
-	fmt.Println("\n  Connection strings added to .env.example:\n")
+	fmt.Println("  Connection strings added to .env.example:")
+	fmt.Println()
 	for _, e := range entries {
 		if e.Comment != "" {
 			fmt.Printf("  %s=\"%s\"\n", e.Key, e.Value)
