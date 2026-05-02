@@ -78,3 +78,35 @@ func PrintConnectionStrings(entries []EnvEntry) {
 	}
 	fmt.Println()
 }
+// Used by docker add which already knows exactly which entries to add
+func AppendEnvEntries(dir string, entries []EnvEntry) error {
+	envPath := filepath.Join(dir, ".env.example")
+
+	existing := ""
+	data, err := os.ReadFile(envPath)
+	if err == nil {
+		existing = string(data)
+	}
+
+	var sb strings.Builder
+	sb.WriteString(existing)
+
+	if len(existing) > 0 && !strings.HasSuffix(existing, "\n") {
+		sb.WriteString("\n")
+	}
+
+	for _, entry := range entries {
+		// Skip if key already exists
+		if strings.Contains(existing, entry.Key+"=") ||
+			strings.Contains(existing, entry.Key+"=\"") {
+			continue
+		}
+
+		if entry.Comment != "" {
+			sb.WriteString(fmt.Sprintf("\n# %s\n", entry.Comment))
+		}
+		sb.WriteString(fmt.Sprintf("%s=\"%s\"\n", entry.Key, entry.Value))
+	}
+
+	return os.WriteFile(envPath, []byte(sb.String()), 0644)
+}
