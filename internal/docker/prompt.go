@@ -19,7 +19,25 @@ func ConfirmDetected(info *StackInfo) bool {
 	input, _ := reader.ReadString('\n')
 	input = strings.ToLower(strings.TrimSpace(input))
 
-	// Default is yes — empty input or "y" confirms
+	return input == "" || input == "y" || input == "yes"
+}
+
+// ConfirmORM asks the user to confirm the auto-detected ORM
+func ConfirmORM(info *ORMInfo) bool {
+	cyan := color.New(color.FgCyan, color.Bold)
+	dim := color.New(color.FgHiBlack)
+
+	if info.Name == "none" {
+		dim.Println("\n  No ORM detected in package.json")
+		return true
+	}
+
+	cyan.Printf("\n? Detected ORM: %s. Confirm? [Y/n]: ", info.DisplayName)
+
+	reader := bufio.NewReader(os.Stdin)
+	input, _ := reader.ReadString('\n')
+	input = strings.ToLower(strings.TrimSpace(input))
+
 	return input == "" || input == "y" || input == "yes"
 }
 
@@ -43,14 +61,12 @@ func AskServices() ([]string, error) {
 	input, _ := reader.ReadString('\n')
 	input = strings.TrimSpace(input)
 
-	// Empty input or selecting "None" → no services
 	noneIndex := len(ServiceOrder) + 1
 	if input == "" || input == strconv.Itoa(noneIndex) {
 		dim.Println("  No services selected")
 		return []string{}, nil
 	}
 
-	// Parse comma-separated numbers
 	parts := strings.Split(input, ",")
 	selected := []string{}
 	seen := map[string]bool{}
@@ -59,14 +75,11 @@ func AskServices() ([]string, error) {
 		part = strings.TrimSpace(part)
 		n, err := strconv.Atoi(part)
 		if err != nil || n < 1 || n > noneIndex {
-			return nil, fmt.Errorf("invalid choice %q — enter numbers between 1 and %d", part, noneIndex)
+			return nil, fmt.Errorf("invalid choice %q - enter numbers between 1 and %d", part, noneIndex)
 		}
-
-		// Selecting None clears everything
 		if n == noneIndex {
 			return []string{}, nil
 		}
-
 		serviceName := ServiceOrder[n-1]
 		if !seen[serviceName] {
 			selected = append(selected, serviceName)
@@ -74,7 +87,6 @@ func AskServices() ([]string, error) {
 		}
 	}
 
-	// Print confirmation
 	fmt.Println()
 	for _, s := range selected {
 		green.Printf("  + %s\n", ServiceDisplayNames[s])
@@ -84,25 +96,32 @@ func AskServices() ([]string, error) {
 }
 
 // AskPort asks the user for the app port with a default
+// Re-prompts on invalid input instead of silently falling back
 func AskPort(defaultPort int) int {
 	cyan := color.New(color.FgCyan, color.Bold)
-	cyan.Printf("\n? App port [%d]: ", defaultPort)
+	red := color.New(color.FgRed)
 
 	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString('\n')
-	input = strings.TrimSpace(input)
 
-	if input == "" {
-		return defaultPort
+	for {
+		cyan.Printf("\n? App port [%d]: ", defaultPort)
+
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		// Empty input = use default
+		if input == "" {
+			return defaultPort
+		}
+
+		n, err := strconv.Atoi(input)
+		if err != nil || n < 1 || n > 65535 {
+			red.Printf("  Invalid port %q - enter a number between 1 and 65535\n", input)
+			continue
+		}
+
+		return n
 	}
-
-	n, err := strconv.Atoi(input)
-	if err != nil || n < 1 || n > 65535 {
-		color.New(color.FgYellow).Printf("  Invalid port, using default %d\n", defaultPort)
-		return defaultPort
-	}
-
-	return n
 }
 
 // AskOverwrite asks the user whether to overwrite an existing file

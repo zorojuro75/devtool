@@ -18,6 +18,7 @@ func newDockerCmd() *cobra.Command {
 
 	dockerCmd.AddCommand(newDockerInitCmd())
 	dockerCmd.AddCommand(newDockerAddCmd())
+	dockerCmd.AddCommand(newDockerRemoveCmd())
 	return dockerCmd
 }
 
@@ -40,6 +41,7 @@ func newDockerInitCmd() *cobra.Command {
 
 			opts := docker.NewDockerOptions()
 
+			// Stack detection
 			if stack != "" {
 				opts.Stack = stack
 				opts.ProjectName = projectNameFromDir(dir)
@@ -62,6 +64,19 @@ func newDockerInitCmd() *cobra.Command {
 				opts.ProjectName = projectNameFromDir(dir)
 			}
 
+			// ORM detection
+			ormInfo, err := docker.DetectORM(dir)
+			if err == nil && ormInfo != nil {
+				if !noPrompt {
+					docker.ConfirmORM(ormInfo)
+				}
+				opts.ORM = ormInfo.Name
+			}
+
+			// TypeScript detection
+			opts.IsTypeScript = docker.DetectTypeScript(dir)
+
+			// Services
 			if noPrompt {
 				opts.Services = services
 			} else {
@@ -72,6 +87,7 @@ func newDockerInitCmd() *cobra.Command {
 				opts.Services = selected
 			}
 
+			// Port
 			if port != 0 {
 				opts.Port = port
 			} else if !noPrompt {
@@ -90,13 +106,6 @@ func newDockerInitCmd() *cobra.Command {
 	return cmd
 }
 
-func projectNameFromDir(dir string) string {
-	parts := strings.Split(strings.ReplaceAll(dir, "\\", "/"), "/")
-	if len(parts) == 0 {
-		return "myapp"
-	}
-	return parts[len(parts)-1]
-}
 func newDockerAddCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "add [service...]",
@@ -115,4 +124,31 @@ func newDockerAddCmd() *cobra.Command {
 			return docker.Add(args, dir)
 		},
 	}
+}
+
+func newDockerRemoveCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "remove [service...]",
+		Short: "Remove a service from docker-compose.yml",
+		Long:  `Remove one or more services from your docker-compose.yml.`,
+		Example: `  devtool docker remove redis
+  devtool docker remove redis mailhog
+  devtool docker remove postgres redis mailhog`,
+		Args: cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			dir, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("cannot get current directory: %w", err)
+			}
+			return docker.Remove(args, dir)
+		},
+	}
+}
+
+func projectNameFromDir(dir string) string {
+	parts := strings.Split(strings.ReplaceAll(dir, "\\", "/"), "/")
+	if len(parts) == 0 {
+		return "myapp"
+	}
+	return parts[len(parts)-1]
 }
